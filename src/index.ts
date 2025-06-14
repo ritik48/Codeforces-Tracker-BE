@@ -1,7 +1,16 @@
 import express, { NextFunction, Request, Response } from "express";
 import { ApiError } from "./utils/ApiError";
+import { connect } from "http2";
+import { connectDB } from "./utils/db";
+import { userRouter } from "./routes/user.route";
+import cookieParser from "cookie-parser";
 
 const app = express();
+
+app.use(cookieParser());
+app.use(express.json());
+
+app.use("/", userRouter);
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -18,6 +27,16 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(status).send({ message, success: false });
 });
 
-app.listen(3000, () => {
-  console.log("Example app listening on port 3000!");
-});
+const PORT = process.env.PORT || 3000;
+
+connectDB()
+  .then(() => {
+    console.log("Connected to DB");
+    app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.log("Error connecting to DB.\nExiting...");
+    process.exit(1);
+  });
