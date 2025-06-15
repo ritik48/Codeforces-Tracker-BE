@@ -4,8 +4,26 @@ import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/AsyncHandler";
 
 export const fetchAllStudents = asyncHandler(async (req, res) => {
-  const students = await Student.find();
-  res.status(200).json({ success: true, data: students });
+  const page = parseInt((req.query.page || "1") as string);
+  const limit = parseInt((req.query.limit || "10") as string);
+
+  const skip = (page - 1) * limit;
+
+  const [students, total] = await Promise.all([
+    Student.find().skip(skip).limit(limit),
+    Student.countDocuments(),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: students,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
 });
 
 export const createStudent = asyncHandler(async (req, res) => {
