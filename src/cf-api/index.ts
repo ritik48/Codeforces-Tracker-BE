@@ -39,7 +39,6 @@ interface Submission {
   id: number;
   contestId: number;
   creationTimeSeconds: number;
-  relativeTimeSeconds: number;
   problem: Problem;
   programmingLanguage: string;
   verdict: string;
