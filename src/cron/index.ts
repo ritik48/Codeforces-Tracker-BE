@@ -1,16 +1,30 @@
-import { fetchStudentData, fetchStudentRatings } from "../cf-api";
+import {
+  fetchStudentData,
+  fetchStudentRatings,
+  fetchStudentSubmissions,
+} from "../cf-api";
 import { Contest } from "../models/contest.model";
+import { Submission } from "../models/submission.model";
 import { Student } from "../models/student.model";
 
 export const runTask = async () => {
   const students = await Student.find();
 
   for (let student of students) {
+    // add student (it just updates the existing student)
+
     let success = await addStudentToDB(student);
     if (!success) continue;
 
+    // add contests
     success = await addContestToDB(student.cf_handle, student._id as string);
     if (!success) continue;
+
+    // add submission
+    success = await addSubmissionsToDB(
+      student.cf_handle,
+      student._id as string
+    );
   }
 };
 
@@ -70,6 +84,49 @@ const addContestToDB = async (cf_handle: string, student_id: string) => {
 
   // save all the new contests
   await Contest.create(contest_to_save);
+
+  return true;
+};
+
+const addSubmissionsToDB = async (cf_handle: string, student_id: string) => {
+  const submission_data = await fetchStudentSubmissions(cf_handle);
+
+  if (!submission_data.success) {
+    console.log(`CF ID: ${cf_handle}\n${submission_data.message}`);
+    return false;
+  }
+
+  // get exising submissions data so that we only save the new submission after comparing
+  const existing_submissions = await Submission.find({ student: student_id });
+
+  const all_submissions = submission_data.data || [];
+
+  const new_submissions_data = [];
+  for (let submission of all_submissions) {
+    const submission_payload = {
+      student: student_id,
+      contestId: submission.contestId,
+      index: submission.problem.index,
+      name: submission.problem.name,
+      rating: submission.problem.rating,
+      verdict: submission.verdict,
+      submissionId: submission.id,
+      creationTime: new Date(submission.creationTimeSeconds * 1000),
+    };
+
+    new_submissions_data.push(submission_payload);
+  }
+  const existingIds = new Set(
+    existing_submissions.map((es) => es.submissionId)
+  );
+
+  // get those data whose ids do not exists in the db
+  const submissions_to_save = new_submissions_data.filter(
+    (ns) => !existingIds.has(ns.submissionId)
+  );
+
+  // save all the new contests
+  await Submission.create(submissions_to_save);
 
   return true;
 };
