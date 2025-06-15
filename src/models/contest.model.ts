@@ -4,7 +4,7 @@ import {
   STUDENT_COLLECTION_NAME,
 } from "./model-config";
 
-export interface Contest extends Document {
+export interface ContestDocument extends Document {
   student: Schema.Types.ObjectId;
   contestId: number;
   contestName: string;
@@ -15,7 +15,7 @@ export interface Contest extends Document {
   unsolvedProblems: number;
 }
 
-const contestSchema = new Schema<Contest>({
+const contestSchema = new Schema<ContestDocument>({
   student: {
     type: Schema.Types.ObjectId,
     ref: STUDENT_COLLECTION_NAME,
@@ -30,7 +30,7 @@ const contestSchema = new Schema<Contest>({
   unsolvedProblems: Number,
 });
 
-export const Contest = mongoose.model<Contest>(
+export const Contest = mongoose.model<ContestDocument>(
   CONTEST_COLLECTION_NAME,
   contestSchema
 );

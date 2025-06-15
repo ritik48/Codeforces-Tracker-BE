@@ -4,7 +4,7 @@ import {
   PROBLEM_COLLECTION_NAME,
 } from "./model-config";
 
-export interface Problem extends Document {
+export interface SubmissionDocument extends Document {
   student: Schema.Types.ObjectId;
   contestId: number;
   index: string;
@@ -15,7 +15,7 @@ export interface Problem extends Document {
   problemId: string;
 }
 
-const submissionSchema = new Schema<Problem>({
+const submissionSchema = new Schema<SubmissionDocument>({
   student: {
     type: Schema.Types.ObjectId,
     ref: STUDENT_COLLECTION_NAME,
@@ -30,7 +30,7 @@ const submissionSchema = new Schema<Problem>({
   problemId: String,
 });
 
-export const Problem = mongoose.model<Problem>(
+export const Problem = mongoose.model<SubmissionDocument>(
   PROBLEM_COLLECTION_NAME,
   submissionSchema
 );
