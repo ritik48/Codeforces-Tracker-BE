@@ -1,4 +1,5 @@
 import { syncStudentData } from "../cron";
+import { Contest } from "../models/contest.model";
 import { Student } from "../models/student.model";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/AsyncHandler";
@@ -98,4 +99,29 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json({ success: true, message: "Student deleted successfully" });
+});
+
+export const fetchStudentContestHistory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const days = parseInt((req.query.days || "90") as string);
+
+  const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  // fetch contest adter the from date and sort it in ascending order
+  const contests = await Contest.find({
+    student: id,
+    ratingUpdateTimeSeconds: { $gte: fromDate },
+  }).sort({ ratingUpdateTimeSeconds: 1 });
+
+  res.status(200).json({
+    success: true,
+    data: contests.map((c) => ({
+      contestName: c.contestName,
+      date: c.ratingUpdateTimeSeconds,
+      oldRating: c.oldRating,
+      newRating: c.newRating,
+      rank: c.rank,
+      unsolvedProblems: c.unsolvedProblems,
+    })),
+  });
 });
