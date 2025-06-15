@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 import {
   STUDENT_COLLECTION_NAME,
-  PROBLEM_COLLECTION_NAME,
+  SUBMISSION_COLLECTION_NAME,
 } from "./model-config";
 
 export interface SubmissionDocument extends Document {
@@ -31,6 +31,6 @@ const submissionSchema = new Schema<SubmissionDocument>({
 });
 
 export const Submission = mongoose.model<SubmissionDocument>(
-  PROBLEM_COLLECTION_NAME,
+  SUBMISSION_COLLECTION_NAME,
   submissionSchema
 );
