@@ -11,42 +11,42 @@ export const runTask = async () => {
   const students = await Student.find();
 
   for (let student of students) {
-    // add student (it just updates the existing student)
+    await syncStudentData(student);
+  }
+};
 
-    let success = await addStudentToDB(student);
-    if (!success) continue;
+export const syncStudentData = async (student: Student) => {
+  // add student (it just updates the existing student)
+  let success = await addStudentToDB(student);
+  if (!success) return;
 
-    // add contests
-    success = await addContestToDB(student.cf_handle, student._id as string);
-    if (!success) continue;
+  // add contests
+  success = await addContestToDB(student.cf_handle, student._id as string);
+  if (!success) return;
 
-    // add submission
-    success = await addSubmissionsToDB(
-      student.cf_handle,
+  // add submission
+  success = await addSubmissionsToDB(student.cf_handle, student._id as string);
+
+  // updatr the total_unsolved problems in a contest
+  const contests = await Contest.find({ student: student._id });
+
+  const bulkWriteObject = [];
+  for (let contest of contests) {
+    const total_unsolved = await calculateUnsolvedProblems(
+      contest.contestId,
       student._id as string
     );
 
-    // updatr the total_unsolved problems in a contest
-    const contests = await Contest.find({ student: student._id });
-
-    const bulkWriteObject = [];
-    for (let contest of contests) {
-      const total_unsolved = await calculateUnsolvedProblems(
-        contest.contestId,
-        student._id as string
-      );
-
-      bulkWriteObject.push({
-        updateOne: {
-          filter: { contestId: contest.contestId, student: student._id },
-          update: { $set: { unsolvedProblems: total_unsolved } },
-        },
-      });
-    }
-
-    // update the contest with unsolve_problems count in a bulk write
-    await Contest.bulkWrite(bulkWriteObject);
+    bulkWriteObject.push({
+      updateOne: {
+        filter: { contestId: contest.contestId, student: student._id },
+        update: { $set: { unsolvedProblems: total_unsolved } },
+      },
+    });
   }
+
+  // update the contest with unsolve_problems count in a bulk write
+  await Contest.bulkWrite(bulkWriteObject);
 };
 
 const addStudentToDB = async (student: Student) => {
@@ -176,5 +176,3 @@ const calculateUnsolvedProblems = async (
   const total_unsolved = attempted_problems.size - solved_problems.size;
   return total_unsolved;
 };
-
-runTask();
