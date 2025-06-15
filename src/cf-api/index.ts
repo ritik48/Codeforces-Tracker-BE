@@ -10,9 +10,55 @@ interface StudentResponseType {
     lastName?: string;
   }[];
 }
-/*
-=================== SAMPLE DATA ====================
- {
+
+interface RatingResponseType {
+  status: "OK" | "FAILED";
+  comment?: string;
+  result: {
+    contestId: number;
+    contestName: string;
+    handle: string;
+    rank: number;
+    ratingUpdateTimeSeconds: number;
+    oldRating: number;
+    newRating: number;
+  }[];
+}
+
+interface Problem {
+  contestId: number;
+  index: string;
+  name: string;
+  type: string;
+  points: number;
+  rating: number;
+  tags: string[];
+}
+
+interface Submission {
+  id: number;
+  contestId: number;
+  creationTimeSeconds: number;
+  relativeTimeSeconds: number;
+  problem: Problem;
+  programmingLanguage: string;
+  verdict: string;
+  testset: string;
+  passedTestCount: number;
+  timeConsumedMillis: number;
+  memoryConsumedBytes: number;
+}
+
+interface SubmissionResponseType {
+  status: "OK" | "FAILED";
+  comment?: string;
+  result: Submission[];
+}
+
+const fetchStudentData = async (cf_handle: string) => {
+  /*
+    =============== SAMPLE DATA ==================
+    {
       "lastName": "Khodyrev",
       "lastOnlineTimeSeconds": 1742481459,
       "rating": 1709,
@@ -27,13 +73,11 @@ interface StudentResponseType {
       "maxRating": 2072,
       "registrationTimeSeconds": 1268570311,
       "maxRank": "candidate master"
-  }
+    }
 
-  Observation: Some faileds may not be present. So kept them optional in type.
+    Observation: Some faileds may not be present. So kept them optional in type.
+  */
 
-*/
-
-const fetchStudentData = async (cf_handle: string) => {
   const url = BASE_URL + `/user.info?handles=${cf_handle}`;
 
   try {
@@ -49,5 +93,110 @@ const fetchStudentData = async (cf_handle: string) => {
   } catch (error) {
     console.log({ error });
     return { success: false, message: "Could not fetch the profile." };
+  }
+};
+
+const fetchStudentRatings = async (cf_handle: string) => {
+  /*
+    =============== SAMPLE DATA ==================
+    
+    "result": [
+      {
+        "contestId": 1,
+        "contestName": "Codeforces Beta Round 1",
+        "handle": "Fefer_Ivan",
+        "rank": 30,
+        "ratingUpdateTimeSeconds": 1266588000,
+        "oldRating": 0,
+        "newRating": 1502
+      },
+      {
+        "contestId": 2,
+        "contestName": "Codeforces Beta Round 2",
+        "handle": "Fefer_Ivan",
+        "rank": 46,
+        "ratingUpdateTimeSeconds": 1267124400,
+        "oldRating": 1502,
+        "newRating": 1521
+      }
+    ]
+  */
+
+  const url = BASE_URL + `/user.rating?handle=${cf_handle}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      return { success: false, message: "Could not fetch users ratings" };
+    }
+    const data: RatingResponseType = await res.json();
+
+    if (data.status !== "OK") return { success: false, message: data.comment };
+
+    return { success: true, data: data.result };
+  } catch (error) {
+    return { success: false, message: "Could not fetch users ratings" };
+  }
+};
+
+const fetchStudentSubmissions = async (cf_handle: string) => {
+  const url = BASE_URL + `/user.status?handle=${cf_handle}`;
+
+  /*
+    =============== SAMPLE DATA ==================
+    
+    "result": [
+    {
+      "id": 157298399,
+      "contestId": 1677,
+      "creationTimeSeconds": 1652613839,
+      "relativeTimeSeconds": 2147483647,
+      "problem": {
+        "contestId": 1677,
+        "index": "A",
+        "name": "Tokitsukaze and Strange Inequality",
+        "type": "PROGRAMMING",
+        "points": 500,
+        "rating": 1600,
+        "tags": [
+          "brute force",
+          "data structures",
+          "dp"
+        ]
+      },
+      "author": {
+        "contestId": 1677,
+        "participantId": 133161991,
+        "members": [
+          {
+            "handle": "Fefer_Ivan"
+          }
+        ],
+        "participantType": "PRACTICE",
+        "ghost": false,
+        "startTimeSeconds": 1652020500
+      },
+      "programmingLanguage": "C++17 (GCC 7-32)",
+      "verdict": "OK",
+      "testset": "TESTS",
+      "passedTestCount": 68,
+      "timeConsumedMillis": 171,
+      "memoryConsumedBytes": 202240000
+      },
+    ]
+  */
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      return { success: false, message: "Could not fetch users contests" };
+    }
+    const data: SubmissionResponseType = await res.json();
+
+    if (data.status !== "OK") return { success: false, message: data.comment };
+
+    return { success: true, data: data.result };
+  } catch (error) {
+    return { success: false, message: "Could not fetch users contests" };
   }
 };
