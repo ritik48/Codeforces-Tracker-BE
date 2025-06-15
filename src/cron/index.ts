@@ -25,6 +25,27 @@ export const runTask = async () => {
       student.cf_handle,
       student._id as string
     );
+
+    // updatr the total_unsolved problems in a contest
+    const contests = await Contest.find({ student: student._id });
+
+    const bulkWriteObject = [];
+    for (let contest of contests) {
+      const total_unsolved = await calculateUnsolvedProblems(
+        contest.contestId,
+        student._id as string
+      );
+
+      bulkWriteObject.push({
+        updateOne: {
+          filter: { contestId: contest.contestId, student: student._id },
+          update: { $set: { unsolvedProblems: total_unsolved } },
+        },
+      });
+    }
+
+    // update the contest with unsolve_problems count in a bulk write
+    await Contest.bulkWrite(bulkWriteObject);
   }
 };
 
@@ -129,6 +150,31 @@ const addSubmissionsToDB = async (cf_handle: string, student_id: string) => {
   await Submission.create(submissions_to_save);
 
   return true;
+};
+
+const calculateUnsolvedProblems = async (
+  contest_id: number,
+  student_id: string
+) => {
+  const submissions = await Submission.find({
+    contestId: contest_id,
+    student: student_id,
+  });
+
+  const attempted_problems = new Set();
+  const solved_problems = new Set();
+
+  submissions.forEach((sub) => {
+    const key = `${sub.contestId}-${sub.index}`;
+    attempted_problems.add(key);
+
+    if (sub.verdict === "OK") {
+      solved_problems.add(key);
+    }
+  });
+
+  const total_unsolved = attempted_problems.size - solved_problems.size;
+  return total_unsolved;
 };
 
 runTask();
