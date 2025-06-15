@@ -1,6 +1,7 @@
 import { syncStudentData } from "../cron";
 import { Contest } from "../models/contest.model";
 import { Student } from "../models/student.model";
+import { Submission, SubmissionDocument } from "../models/submission.model";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/AsyncHandler";
 
@@ -103,9 +104,20 @@ export const deleteStudent = asyncHandler(async (req, res) => {
 
 export const fetchStudentContestHistory = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  if (!id) {
+    throw new ApiError("Student ID is required", 400);
+  }
+
+  const student = await Student.findById(id);
+  if (!student) {
+    throw new ApiError("Student not found", 404);
+  }
+
   const days = parseInt((req.query.days || "90") as string);
 
   const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  console.log({ fromDate });
 
   // fetch contest adter the from date and sort it in ascending order
   const contests = await Contest.find({
@@ -123,5 +135,113 @@ export const fetchStudentContestHistory = asyncHandler(async (req, res) => {
       rank: c.rank,
       unsolvedProblems: c.unsolvedProblems,
     })),
+  });
+});
+
+export const fetchStudentSubmissionData = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const days = parseInt((req.query.days || "7") as string);
+
+  if (!id) {
+    throw new ApiError("Student ID is required", 400);
+  }
+
+  const student = await Student.findById(id);
+  if (!student) {
+    throw new ApiError("Student not found", 404);
+  }
+
+  const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const solvedSubmissions = await Submission.find({
+    student: id,
+    verdict: "OK",
+    creationTime: { $gte: sinceDate },
+  });
+
+  // MOST DIFFICULT PROBLEM
+  const mostDifficultProblem = solvedSubmissions.reduce(
+    (prev, cur) => (prev.rating > cur.rating ? prev : cur),
+    solvedSubmissions[0]
+  );
+
+  // TOTAL SOLVED PROBLEMS
+  // use set to avoid counting the same problem twice
+
+  const uniqueProblems: Record<string, SubmissionDocument> = {};
+
+  solvedSubmissions.forEach((s) => {
+    const key = `${s.contestId}-${s.index}`;
+    if (!uniqueProblems[key]) {
+      uniqueProblems[key] = s;
+    }
+  });
+
+  const totalSolvedProblems = Object.keys(uniqueProblems).length;
+
+  const totalRating = solvedSubmissions.reduce(
+    (prev, cur) => prev + cur.rating,
+    0
+  );
+  const averageRating = totalRating / totalSolvedProblems;
+
+  // AVERAGE PROBLEM PER DAY
+
+  // for this we need to find all the days in which the student has solved a problem
+  const activeDays = new Set(
+    solvedSubmissions.map((sub) => sub.creationTime.toISOString().split("T")[0])
+  );
+  const averageProblemPerDay = totalSolvedProblems / activeDays.size;
+
+  // SPOLVED PROBLEMS PER RATING BUCKET
+
+  const buckets: Record<string, number> = {};
+
+  // keeping bucket size as 200
+  solvedSubmissions.forEach((sub) => {
+    if (!sub.rating) return;
+    const bucketStart = Math.floor(sub.rating / 200) * 200;
+    const bucketEnd = bucketStart + 199;
+    const label = `${bucketStart}-${bucketEnd}`;
+    buckets[label] = (buckets[label] || 0) + 1;
+  });
+
+  const ratingBucketData = Object.entries(buckets).map(([label, count]) => ({
+    label,
+    count,
+  }));
+
+  // SUBMISSION HEAR MAP - NUMBER OF SUBMISSION EVERY DAY
+  const heatmapData: Record<string, number> = {};
+
+  solvedSubmissions.forEach((sub) => {
+    const dateStr = sub.creationTime.toISOString().split("T")[0];
+    heatmapData[dateStr] = (heatmapData[dateStr] || 0) + 1;
+  });
+
+  // we need to get all the days for the given date range, even if no submission was made on that day
+  const allDates: string[] = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - i);
+    allDates.push(date.toISOString().split("T")[0]);
+  }
+
+  const heatmap = allDates.map((date) => ({
+    date,
+    count: heatmapData[date] || 0,
+  }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      mostDifficultProblem,
+      totalSolvedProblems,
+      averageRating,
+      averageProblemPerDay,
+      ratingBucketData,
+      heatmap,
+    },
   });
 });
