@@ -2,14 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import { ApiError } from "./ApiError";
 import { verifyToken } from "./token-helpers";
 import { User, UserDocument } from "../models/user.model";
+import { asyncHandler } from "./AsyncHandler";
 
-export const isAuthenticated = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    console.log("dwefwef");
+export const isAuthenticated = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
     const token = req.cookies.token;
 
     console.log({ token });
@@ -30,11 +26,9 @@ export const isAuthenticated = async (
     if (!user) {
       throw new ApiError("Invalid Request", 401);
     }
-    //@ts-ignore
+
     req.user = user;
 
     next();
-  } catch (error) {
-    next(error);
   }
-};
+);
