@@ -1,5 +1,8 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { CONTEST_COLLECTION_NAME, STUDENT_COLLECTION_NAME } from "./model-config";
+import {
+  CONTEST_COLLECTION_NAME,
+  STUDENT_COLLECTION_NAME,
+} from "./model-config";
 
 export interface Contest extends Document {
   student: Schema.Types.ObjectId;

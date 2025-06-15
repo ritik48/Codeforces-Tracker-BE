@@ -14,11 +14,9 @@ const studentSchema = new Schema<Student>(
   {
     name: {
       type: String,
-      required: true,
     },
     email: {
       type: String,
-      required: true,
       unique: true,
     },
     phone: {
