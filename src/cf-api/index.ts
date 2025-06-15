@@ -55,7 +55,7 @@ interface SubmissionResponseType {
   result: Submission[];
 }
 
-const fetchStudentData = async (cf_handle: string) => {
+export const fetchStudentData = async (cf_handle: string) => {
   /*
     =============== SAMPLE DATA ==================
     {
@@ -96,7 +96,7 @@ const fetchStudentData = async (cf_handle: string) => {
   }
 };
 
-const fetchStudentRatings = async (cf_handle: string) => {
+export const fetchStudentRatings = async (cf_handle: string) => {
   /*
     =============== SAMPLE DATA ==================
     
@@ -139,7 +139,7 @@ const fetchStudentRatings = async (cf_handle: string) => {
   }
 };
 
-const fetchStudentSubmissions = async (cf_handle: string) => {
+export const fetchStudentSubmissions = async (cf_handle: string) => {
   const url = BASE_URL + `/user.status?handle=${cf_handle}`;
 
   /*
