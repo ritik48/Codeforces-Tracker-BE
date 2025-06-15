@@ -4,12 +4,15 @@ import { connect } from "http2";
 import { connectDB } from "./utils/db";
 import { userRouter } from "./routes/user.route";
 import cookieParser from "cookie-parser";
+// import { runTask } from "./cron";
+import { studentRouter } from "./routes/student.route";
 
 const app = express();
 
 app.use(cookieParser());
 app.use(express.json());
 
+app.use("/student", studentRouter);
 app.use("/", userRouter);
 
 app.get("/", (req, res) => {
