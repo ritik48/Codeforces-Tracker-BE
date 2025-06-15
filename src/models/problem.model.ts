@@ -6,6 +6,7 @@ import {
 
 export interface SubmissionDocument extends Document {
   student: Schema.Types.ObjectId;
+  submissionId: number;
   contestId: number;
   index: string;
   name: string;
@@ -21,6 +22,7 @@ const submissionSchema = new Schema<SubmissionDocument>({
     ref: STUDENT_COLLECTION_NAME,
     required: true,
   },
+  submissionId: Number,
   contestId: Number,
   index: String,
   name: String,
