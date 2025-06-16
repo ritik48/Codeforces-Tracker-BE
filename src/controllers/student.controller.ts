@@ -49,6 +49,11 @@ export const createStudent = asyncHandler(async (req, res) => {
     ...(phone && { phone }),
   };
 
+  const exisingStudent = await Student.findOne({ cf_handle });
+  if (exisingStudent) {
+    throw new ApiError("CF Handle already exists", 400);
+  }
+
   const student = new Student(payload);
   await student.save();
 
@@ -91,6 +96,11 @@ export const updateStudent = asyncHandler(async (req, res) => {
 
   // TODO: Instead of syncing here, we can push it into a queue and sync it asynchronously
   if (old_cf_handle !== cf_handle) {
+    // delete the old contests, submission for the old cf_handle
+    await Contest.deleteMany({ student: old_cf_handle });
+    await Submission.deleteMany({ student: old_cf_handle });
+
+    // sync the new contests, submission for the new cf_handle
     await syncStudentData(student);
   }
 
@@ -105,6 +115,11 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   }
 
   await Student.findByIdAndDelete(id);
+
+  // delete the contests, submission for the student
+  await Contest.deleteMany({ student: id });
+  await Submission.deleteMany({ student: id });
+
   res
     .status(200)
     .json({ success: true, message: "Student deleted successfully" });
