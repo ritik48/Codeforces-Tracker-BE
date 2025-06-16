@@ -1,9 +1,17 @@
+import { get } from "http";
 import { syncStudentData } from "../cron";
 import { Contest } from "../models/contest.model";
 import { Student } from "../models/student.model";
 import { Submission, SubmissionDocument } from "../models/submission.model";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/AsyncHandler";
+import {
+  getAverageProblemPerDay,
+  getMostDifficultProblem,
+  getRatingBucketData,
+  getSubmissionHeatMap,
+  getTotalSovledProblems,
+} from "../utils/helper";
 
 export const fetchAllStudents = asyncHandler(async (req, res) => {
   const page = parseInt((req.query.page || "1") as string);
@@ -150,7 +158,6 @@ export const fetchStudentSubmissionData = asyncHandler(async (req, res) => {
   if (!student) {
     throw new ApiError("Student not found", 404);
   }
-
   const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const solvedSubmissions = await Submission.find({
@@ -160,25 +167,12 @@ export const fetchStudentSubmissionData = asyncHandler(async (req, res) => {
   });
 
   // MOST DIFFICULT PROBLEM
-  const mostDifficultProblem = solvedSubmissions.reduce(
-    (prev, cur) => (prev.rating > cur.rating ? prev : cur),
-    solvedSubmissions[0]
-  );
+  const mostDifficultProblem = getMostDifficultProblem(solvedSubmissions);
 
   // TOTAL SOLVED PROBLEMS
-  // use set to avoid counting the same problem twice
+  const totalSolvedProblems = getTotalSovledProblems(solvedSubmissions);
 
-  const uniqueProblems: Record<string, SubmissionDocument> = {};
-
-  solvedSubmissions.forEach((s) => {
-    const key = `${s.contestId}-${s.index}`;
-    if (!uniqueProblems[key]) {
-      uniqueProblems[key] = s;
-    }
-  });
-
-  const totalSolvedProblems = Object.keys(uniqueProblems).length;
-
+  // AVERAGE RATING OF SOLVED PROBLEMS
   const totalRating = solvedSubmissions.reduce(
     (prev, cur) => prev + cur.rating,
     0
@@ -186,52 +180,16 @@ export const fetchStudentSubmissionData = asyncHandler(async (req, res) => {
   const averageRating = totalRating / totalSolvedProblems;
 
   // AVERAGE PROBLEM PER DAY
-
-  // for this we need to find all the days in which the student has solved a problem
-  const activeDays = new Set(
-    solvedSubmissions.map((sub) => sub.creationTime.toISOString().split("T")[0])
+  const averageProblemPerDay = getAverageProblemPerDay(
+    solvedSubmissions,
+    totalSolvedProblems
   );
-  const averageProblemPerDay = totalSolvedProblems / activeDays.size;
 
   // SPOLVED PROBLEMS PER RATING BUCKET
+  const ratingBucketData = getRatingBucketData(solvedSubmissions);
 
-  const buckets: Record<string, number> = {};
-
-  // keeping bucket size as 200
-  solvedSubmissions.forEach((sub) => {
-    if (!sub.rating) return;
-    const bucketStart = Math.floor(sub.rating / 200) * 200;
-    const bucketEnd = bucketStart + 199;
-    const label = `${bucketStart}-${bucketEnd}`;
-    buckets[label] = (buckets[label] || 0) + 1;
-  });
-
-  const ratingBucketData = Object.entries(buckets).map(([label, count]) => ({
-    label,
-    count,
-  }));
-
-  // SUBMISSION HEAR MAP - NUMBER OF SUBMISSION EVERY DAY
-  const heatmapData: Record<string, number> = {};
-
-  solvedSubmissions.forEach((sub) => {
-    const dateStr = sub.creationTime.toISOString().split("T")[0];
-    heatmapData[dateStr] = (heatmapData[dateStr] || 0) + 1;
-  });
-
-  // we need to get all the days for the given date range, even if no submission was made on that day
-  const allDates: string[] = [];
-  const now = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(now.getDate() - i);
-    allDates.push(date.toISOString().split("T")[0]);
-  }
-
-  const heatmap = allDates.map((date) => ({
-    date,
-    count: heatmapData[date] || 0,
-  }));
+  // SUBMISSION HEAt MAP - NUMBER OF SUBMISSION EVERY DAY
+  const heatmap = getSubmissionHeatMap(solvedSubmissions, days);
 
   res.status(200).json({
     success: true,
