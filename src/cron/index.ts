@@ -185,9 +185,12 @@ const checkInactiveStudents = async () => {
   const submissions = await Submission.find({});
   const studentIds = new Set(submissions.map((s) => s.student));
 
+  // Convert Set to Array for MongoDB query
+  const studentIdsArray = Array.from(studentIds);
+
   // fetch students whose ids do not exist in the submissions, and they have email set and allow_email is true
   const inactiveStudents = await Student.find({
-    _id: { $nin: studentIds },
+    _id: { $nin: studentIdsArray },
     email: { $exists: true },
     allow_email: true,
   });
