@@ -182,8 +182,18 @@ const calculateUnsolvedProblems = async (
 };
 
 const checkInactiveStudents = async () => {
-  const submissions = await Submission.find({});
+  // last 7 days
+  const inactiveDRange = 7;
+
+  const submissions = await Submission.find({
+    creationTime: {
+      $gte: new Date(Date.now() - inactiveDRange * 24 * 60 * 60 * 1000),
+    },
+  });
+  console.log({ submissions });
   const studentIds = new Set(submissions.map((s) => s.student));
+
+  console.log({ studentIds });
 
   // Convert Set to Array for MongoDB query
   const studentIdsArray = Array.from(studentIds);
