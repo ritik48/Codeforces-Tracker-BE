@@ -26,6 +26,7 @@ const studentSchema = new Schema<Student>(
     },
     cf_handle: {
       type: String,
+      unique: true,
       required: true,
     },
     current_rating: {
