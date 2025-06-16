@@ -97,8 +97,8 @@ export const updateStudent = asyncHandler(async (req, res) => {
   // TODO: Instead of syncing here, we can push it into a queue and sync it asynchronously
   if (old_cf_handle !== cf_handle) {
     // delete the old contests, submission for the old cf_handle
-    await Contest.deleteMany({ student: old_cf_handle });
-    await Submission.deleteMany({ student: old_cf_handle });
+    await Contest.deleteMany({ student: student._id });
+    await Submission.deleteMany({ student: student._id });
 
     // sync the new contests, submission for the new cf_handle
     await syncStudentData(student);
