@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import { config } from "dotenv";
+config();
 
 const TOKEN_EXPIRY = process.env.JWT_EXPIRY || "10d";
 const TOKEN_SECRET = process.env.TOKEN_SECRET || "samplesecret";
