@@ -6,6 +6,7 @@ import {
 import { Contest } from "../models/contest.model";
 import { Submission } from "../models/submission.model";
 import { Student } from "../models/student.model";
+import { sendEmail } from "../utils/helper";
 
 export const runTask = async () => {
   const students = await Student.find();
@@ -47,6 +48,9 @@ export const syncStudentData = async (student: Student) => {
 
   // update the contest with unsolve_problems count in a bulk write
   await Contest.bulkWrite(bulkWriteObject);
+
+  // check for inactive students
+  await checkInactiveStudents();
 };
 
 const addStudentToDB = async (student: Student) => {
@@ -175,4 +179,36 @@ const calculateUnsolvedProblems = async (
 
   const total_unsolved = attempted_problems.size - solved_problems.size;
   return total_unsolved;
+};
+
+const checkInactiveStudents = async () => {
+  const submissions = await Submission.find({});
+  const studentIds = new Set(submissions.map((s) => s.student));
+
+  // fetch students whose ids do not exist in the submissions, and they have email set and allow_email is true
+  const inactiveStudents = await Student.find({
+    _id: { $nin: studentIds },
+    email: { $exists: true },
+    allow_email: true,
+  });
+
+  inactiveStudents.forEach((s) => {
+    console.log(`Inactive student: ${s.name}`);
+  });
+
+  for (const student of inactiveStudents) {
+    console.log(`Sending email to inactive student: ${student.cf_handle}`);
+
+    try {
+      await sendEmail(student.email, student.name || student.cf_handle);
+
+      // Increment reminder_count
+      student.reminder_count += 1;
+      await student.save();
+
+      console.log(`✅ Email sent to ${student.email}`);
+    } catch (error) {
+      console.error(`❌ Failed to send email to ${student.email}:`, error);
+    }
+  }
 };
