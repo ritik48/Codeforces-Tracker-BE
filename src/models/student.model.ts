@@ -8,6 +8,8 @@ export interface Student extends Document {
   cf_handle: string;
   current_rating: number;
   max_rating: number;
+  allow_email: boolean;
+  reminder_count: number;
 }
 
 const studentSchema = new Schema<Student>(
@@ -31,6 +33,14 @@ const studentSchema = new Schema<Student>(
     },
     max_rating: {
       type: Number,
+    },
+    allow_email: {
+      type: Boolean,
+      default: true,
+    },
+    reminder_count: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }
