@@ -88,7 +88,7 @@ export const getTotalSovledProblems = (submissions: SubmissionDocument[]) => {
 
 export const sendEmail = async (to: string, name: string) => {
   const { data, error } = await resend.emails.send({
-    from: "TLE Team - <no-reply@yourdomain.com>",
+    from: process.env.EMAIL_SENDER_DOMAIL || "onboarding@resend.dev",
     to,
     subject: "Codeforces misses you!",
     html: `
