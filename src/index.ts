@@ -1,11 +1,12 @@
 import express, { NextFunction, Request, Response } from "express";
 import { ApiError } from "./utils/ApiError";
-import { connect } from "http2";
 import { connectDB } from "./utils/db";
 import { userRouter } from "./routes/user.route";
 import cookieParser from "cookie-parser";
-// import { runTask } from "./cron";
 import { studentRouter } from "./routes/student.route";
+
+import { config } from "dotenv";
+config();
 
 const app = express();
 
