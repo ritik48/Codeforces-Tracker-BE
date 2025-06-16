@@ -185,6 +185,7 @@ const checkInactiveStudents = async () => {
   // last 7 days
   const inactiveDRange = 7;
 
+  // get submission data for the last 7 days
   const submissions = await Submission.find({
     creationTime: {
       $gte: new Date(Date.now() - inactiveDRange * 24 * 60 * 60 * 1000),
