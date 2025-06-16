@@ -1,4 +1,9 @@
+import { Resend } from "resend";
 import { SubmissionDocument } from "../models/submission.model";
+import { config } from "dotenv";
+config();
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const getSubmissionHeatMap = (
   submissions: SubmissionDocument[],
@@ -79,4 +84,20 @@ export const getTotalSovledProblems = (submissions: SubmissionDocument[]) => {
   });
 
   return Object.keys(uniqueProblems).length;
+};
+
+export const sendEmail = async (to: string, name: string) => {
+  const { data, error } = await resend.emails.send({
+    from: "TLE Team - <no-reply@yourdomain.com>",
+    to,
+    subject: "Codeforces misses you!",
+    html: `
+          <p>Hi ${name},</p>
+          <p>We noticed you haven't submitted anything recently. We'd love to see you back!</p>
+          `,
+  });
+
+  if (error) {
+    throw error;
+  }
 };
