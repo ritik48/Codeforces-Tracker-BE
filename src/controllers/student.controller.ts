@@ -12,6 +12,9 @@ import {
   getSubmissionHeatMap,
   getTotalSovledProblems,
 } from "../utils/helper";
+import path from "path";
+import fs from "fs";
+import { Request, Response } from "express";
 
 export const fetchAllStudents = asyncHandler(async (req, res) => {
   const page = parseInt((req.query.page || "1") as string);
@@ -209,5 +212,55 @@ export const fetchStudentSubmissionData = asyncHandler(async (req, res) => {
       ratingBucketData,
       heatmap,
     },
+  });
+});
+
+export const downloadStudentData = asyncHandler(async (req, res) => {
+  const students = await Student.find({}).lean();
+
+  if (students.length === 0) {
+    res.status(404).json({ message: "No students found" });
+  }
+
+  const header = [
+    "Name",
+    "Email",
+    "Phone",
+    "CF Handle",
+    "Current Rating",
+    "Max Rating",
+  ].join(",");
+
+  const rows = students.map((student) => [
+    student.name || "",
+    student.email || "",
+    student.phone || "",
+    student.cf_handle || "",
+    student.current_rating || "",
+    student.max_rating || "",
+  ]);
+
+  const csvContent = [header, ...rows].join("\n");
+
+  // temp directory exists in root of the project, and create it if not exists
+  const tempDir = path.join(process.cwd(), "temp");
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+
+  // Create a temporary file path
+  const tempFilePath = path.join(tempDir, `students_${Date.now()}.csv`);
+  fs.writeFileSync(tempFilePath, csvContent);
+
+  res.download(tempFilePath, "students2.csv", (err) => {
+    //delete the temp file after download
+    fs.unlink(tempFilePath, (unlinkErr) => {
+      if (unlinkErr) console.error("Failed to delete temp file:", unlinkErr);
+    });
+
+    if (err) {
+      console.error("Download failed:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: "Download failed" });
+      }
+    }
   });
 });

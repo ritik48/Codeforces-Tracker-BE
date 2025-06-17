@@ -3,6 +3,7 @@ import { isAuthenticated } from "../utils/middleware";
 import {
   createStudent,
   deleteStudent,
+  downloadStudentData,
   fetchAllStudents,
   fetchStudentContestHistory,
   fetchStudentSubmissionData,
@@ -17,5 +18,6 @@ router.get("/:id/contest-history", isAuthenticated, fetchStudentContestHistory);
 router.get("/:id/submission-data", isAuthenticated, fetchStudentSubmissionData);
 router.patch("/:id", isAuthenticated, updateStudent);
 router.delete("/:id", isAuthenticated, deleteStudent);
+router.get("/download", isAuthenticated, downloadStudentData);
 
 export { router as studentRouter };
