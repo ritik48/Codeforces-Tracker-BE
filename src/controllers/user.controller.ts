@@ -3,6 +3,12 @@ import { User } from "../models/user.model";
 import { ApiError } from "../utils/ApiError";
 import { generateToken } from "../utils/token-helpers";
 
+const cookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+};
+
 export const loginUser = async (
   req: Request,
   res: Response,
@@ -25,12 +31,6 @@ export const loginUser = async (
 
   const token = generateToken(user._id as string);
 
-  const cookieOptions: CookieOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-  };
-
   res
     .status(200)
     .cookie("token", token, cookieOptions)
@@ -47,4 +47,12 @@ export const getUser = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const logoutUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  res.clearCookie("token", cookieOptions).status(200).json({ success: true });
 };
