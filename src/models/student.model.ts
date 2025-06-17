@@ -20,6 +20,7 @@ const studentSchema = new Schema<Student>(
     email: {
       type: String,
       unique: true,
+      sparse: true, // Allows for unique email or no email
     },
     phone: {
       type: String,
