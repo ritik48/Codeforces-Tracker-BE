@@ -45,7 +45,7 @@ export const createStudent = asyncHandler(async (req, res) => {
   const payload = {
     cf_handle,
     ...(name && { name }),
-    ...(email && { email }),
+    ...(email === "" ? { email: undefined } : { email }),
     ...(phone && { phone }),
   };
 
@@ -78,19 +78,12 @@ export const updateStudent = asyncHandler(async (req, res) => {
     throw new ApiError("CF Handle is required", 400);
   }
 
-  // Only update fields if they are provided
-  if (name !== undefined) {
-    student.name = name;
-  }
-  if (email !== undefined) {
-    student.email = email;
-  }
-  if (phone !== undefined) {
-    student.phone = phone;
-  }
-
   const old_cf_handle = student.cf_handle;
   student.cf_handle = cf_handle;
+
+  student.name = name || "";
+  student.email = email === "" ? undefined : email; // allow empty email
+  student.phone = phone || "";
 
   await student.save();
 
