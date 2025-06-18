@@ -10,6 +10,8 @@ export interface Student extends Document {
   max_rating: number;
   allow_email: boolean;
   reminder_count: number;
+  rank?: string;
+  max_rank?: string;
 }
 
 const studentSchema = new Schema<Student>(
@@ -44,6 +46,8 @@ const studentSchema = new Schema<Student>(
       type: Number,
       default: 0,
     },
+    rank: String,
+    max_rank: String,
   },
   { timestamps: true }
 );
