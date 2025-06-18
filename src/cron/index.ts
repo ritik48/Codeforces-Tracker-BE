@@ -82,7 +82,12 @@ const addStudentToDB = async (student: Student) => {
     }`.trim(),
     rank: student_data.data?.rank || "",
     max_rank: student_data.data?.maxRank || "",
-    profile_picture: student_data.data?.titlePhoto || "",
+    profile_picture: student_data.data?.titlePhoto
+      ? student_data.data?.titlePhoto !==
+        "https://userpic.codeforces.org/no-title.jpg"
+        ? student_data.data?.titlePhoto
+        : ""
+      : "",
   };
 
   await Student.findByIdAndUpdate(student._id, student_payload);
