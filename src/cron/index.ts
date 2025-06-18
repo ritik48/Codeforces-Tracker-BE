@@ -7,6 +7,7 @@ import { Contest } from "../models/contest.model";
 import { Submission } from "../models/submission.model";
 import { Student } from "../models/student.model";
 import { sendEmail } from "../utils/helper";
+import { profile } from "console";
 
 export const runTask = async () => {
   const students = await Student.find();
@@ -81,6 +82,7 @@ const addStudentToDB = async (student: Student) => {
     }`.trim(),
     rank: student_data.data?.rank || "",
     max_rank: student_data.data?.maxRank || "",
+    profile_picture: student_data.data?.titlePhoto || "",
   };
 
   await Student.findByIdAndUpdate(student._id, student_payload);

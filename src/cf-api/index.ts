@@ -10,6 +10,7 @@ interface StudentResponseType {
     lastName?: string;
     rank?: string;
     maxRank?: string;
+    titlePhoto?: string;
   }[];
 }
 
