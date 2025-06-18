@@ -14,6 +14,7 @@ import {
 } from "../utils/helper";
 import path, { parse } from "path";
 import fs from "fs";
+import { fetchStudentData } from "../cf-api";
 
 export const fetchAllStudents = asyncHandler(async (req, res) => {
   const page = parseInt((req.query.page || "1") as string);
@@ -57,6 +58,14 @@ export const createStudent = asyncHandler(async (req, res) => {
   if (!cf_handle) {
     throw new ApiError("CF Handle is required", 400);
   }
+
+  // check if this cf_handle is valid
+
+  const response = await fetchStudentData(cf_handle);
+  if (!response.success) {
+    throw new ApiError(response.message || "Invalid CF Handle", 400);
+  }
+
   const payload = {
     cf_handle,
     ...(name && { name }),
@@ -91,6 +100,13 @@ export const updateStudent = asyncHandler(async (req, res) => {
 
   if (!cf_handle) {
     throw new ApiError("CF Handle is required", 400);
+  }
+
+  // check if this cf_handle is valid
+
+  const response = await fetchStudentData(cf_handle);
+  if (!response.success) {
+    throw new ApiError(response.message || "Invalid CF Handle", 400);
   }
 
   const old_cf_handle = student.cf_handle;
