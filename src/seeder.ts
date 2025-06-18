@@ -12,22 +12,13 @@ const addAdmin = async () => {
   await User.create({ username, password, role });
 };
 
-const addUser = async () => {
-  await Student.deleteMany();
-
-  const cf_handle = process.argv[2];
-
-  await Student.create({ cf_handle });
-};
-
 const main = async () => {
   try {
     await mongoose.connect(
       process.env.MONGODB_URI || "mongodb://localhost:27017/tle_cf_management"
     );
 
-    // await addAdmin();
-    await addUser();
+    await addAdmin();
   } catch (err) {
     console.error("❌ Error:", err);
   } finally {
