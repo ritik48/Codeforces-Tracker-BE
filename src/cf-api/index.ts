@@ -8,6 +8,8 @@ interface StudentResponseType {
     maxRating?: number;
     firstName?: string;
     lastName?: string;
+    rank?: string;
+    maxRank?: string;
   }[];
 }
 
