@@ -20,17 +20,25 @@ export const runTask = async () => {
 
 export const syncStudentData = async (student: Student) => {
   // add student (it just updates the existing student)
-  let success = await addStudentToDB(student);
-  if (!success) return;
+  let { success, message } = await addStudentToDB(student);
+  if (!success) return { success: false, message };
 
   // add contests
-  success = await addContestToDB(student.cf_handle, student._id as string);
-  if (!success) return;
+  ({ success, message } = await addContestToDB(
+    student.cf_handle,
+    student._id as string
+  ));
+  if (!success) return { success: false, message };
 
   // add submission
-  success = await addSubmissionsToDB(student.cf_handle, student._id as string);
+  ({ success, message } = await addSubmissionsToDB(
+    student.cf_handle,
+    student._id as string
+  ));
 
-  // updatr the total_unsolved problems in a contest
+  if (!success) return { success: false, message };
+
+  // update the total_unsolved problems in a contest
   const contests = await Contest.find({ student: student._id });
 
   const bulkWriteObject = [];
@@ -50,6 +58,11 @@ export const syncStudentData = async (student: Student) => {
 
   // update the contest with unsolve_problems count in a bulk write
   await Contest.bulkWrite(bulkWriteObject);
+
+  // update sync time for this student
+  await Student.findByIdAndUpdate(student._id, { last_sync: new Date() });
+
+  return { success: true, message: "Synced successfully" };
 };
 
 const addStudentToDB = async (student: Student) => {
@@ -58,7 +71,7 @@ const addStudentToDB = async (student: Student) => {
   const student_data = await fetchStudentData(cf_handle);
   if (!student_data.success) {
     console.log(`CF ID: ${cf_handle}\n${student_data.message}`);
-    return false;
+    return { success: false, message: student_data.message };
   }
   const student_payload = {
     current_rating: student_data.data?.rating || 0,
@@ -72,14 +85,14 @@ const addStudentToDB = async (student: Student) => {
 
   await Student.findByIdAndUpdate(student._id, student_payload);
 
-  return true;
+  return { success: true, message: "Student updated successfully" };
 };
 
 const addContestToDB = async (cf_handle: string, student_id: string) => {
   const contest_data = await fetchStudentRatings(cf_handle);
   if (!contest_data.success) {
     console.log(`CF ID: ${cf_handle}\n${contest_data.message}`);
-    return false;
+    return { success: false, message: contest_data.message };
   }
 
   // get exising contests data so that we save the new contest after it not already exists in the db
@@ -111,7 +124,7 @@ const addContestToDB = async (cf_handle: string, student_id: string) => {
   // save all the new contests
   await Contest.create(contest_to_save);
 
-  return true;
+  return { success: true, message: "Contests updated successfully" };
 };
 
 const addSubmissionsToDB = async (cf_handle: string, student_id: string) => {
@@ -119,7 +132,7 @@ const addSubmissionsToDB = async (cf_handle: string, student_id: string) => {
 
   if (!submission_data.success) {
     console.log(`CF ID: ${cf_handle}\n${submission_data.message}`);
-    return false;
+    return { success: false, message: submission_data.message };
   }
 
   // get exising submissions data so that we only save the new submission after comparing
@@ -154,7 +167,7 @@ const addSubmissionsToDB = async (cf_handle: string, student_id: string) => {
   // save all the new contests
   await Submission.create(submissions_to_save);
 
-  return true;
+  return { success: true, message: "Submissions updated successfully" };
 };
 
 const calculateUnsolvedProblems = async (
