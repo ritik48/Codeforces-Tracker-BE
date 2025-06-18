@@ -69,7 +69,7 @@ export const getMostDifficultProblem = (submissions: SubmissionDocument[]) => {
   const submissionsWithRating = submissions.filter((sub) => sub.rating);
   if (submissionsWithRating.length === 0) return null;
 
-  return submissions.reduce(
+  return submissionsWithRating.reduce(
     (prev, cur) => (prev.rating > cur.rating ? prev : cur),
     submissions[0]
   );
