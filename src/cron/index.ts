@@ -14,6 +14,8 @@ export const runTask = async () => {
   for (let student of students) {
     await syncStudentData(student);
   }
+  // check for inactive students
+  await checkInactiveStudents();
 };
 
 export const syncStudentData = async (student: Student) => {
@@ -48,9 +50,6 @@ export const syncStudentData = async (student: Student) => {
 
   // update the contest with unsolve_problems count in a bulk write
   await Contest.bulkWrite(bulkWriteObject);
-
-  // check for inactive students
-  await checkInactiveStudents();
 };
 
 const addStudentToDB = async (student: Student) => {
