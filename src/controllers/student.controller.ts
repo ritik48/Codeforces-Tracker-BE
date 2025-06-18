@@ -229,7 +229,7 @@ export const fetchStudentSubmissionData = asyncHandler(async (req, res) => {
 
   // AVERAGE RATING OF SOLVED PROBLEMS
   const totalRating = solvedSubmissions.reduce(
-    (prev, cur) => prev + cur.rating,
+    (prev, cur) => prev + (cur.rating || 0),
     0
   );
   const averageRating = totalRating / totalSolvedProblems;
