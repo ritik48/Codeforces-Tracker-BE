@@ -2,7 +2,7 @@
 
 This is the backend for the Codeforces Tracker project [Frontend](https://github.com/ritik48/Codeforces-Tracker-FE).
 
-## Setting up the project locally
+### Setting up the project locally
 
 To get started with the project, follow these steps:
 
@@ -53,7 +53,10 @@ npm run dev
 node dist/seeder.js <username> <password>
 ```
 
-## API Documentation
+<br>
+<br>
+
+### API Documentation
 
 **🔐 Auth routes:**
 
