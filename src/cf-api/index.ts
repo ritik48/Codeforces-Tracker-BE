@@ -83,12 +83,15 @@ export const fetchStudentData = async (cf_handle: string) => {
 
   try {
     const res = await fetch(url);
-    if (!res.ok) {
-      return { success: false, message: "Could not fetch the profile." };
-    }
     const data: StudentResponseType = await res.json();
 
-    if (data.status !== "OK") return { success: false, message: data.comment };
+    console.log({ data });
+
+    if (data.status !== "OK")
+      return {
+        success: false,
+        message: data.comment || "Could not fetch the profile.",
+      };
 
     return { success: true, data: data.result[0] };
   } catch (error) {
@@ -127,12 +130,13 @@ export const fetchStudentRatings = async (cf_handle: string) => {
 
   try {
     const res = await fetch(url);
-    if (!res.ok) {
-      return { success: false, message: "Could not fetch users ratings" };
-    }
     const data: RatingResponseType = await res.json();
 
-    if (data.status !== "OK") return { success: false, message: data.comment };
+    if (data.status !== "OK")
+      return {
+        success: false,
+        message: data.comment || "Could not fetch users ratings",
+      };
 
     return { success: true, data: data.result };
   } catch (error) {
@@ -189,12 +193,13 @@ export const fetchStudentSubmissions = async (cf_handle: string) => {
 
   try {
     const res = await fetch(url);
-    if (!res.ok) {
-      return { success: false, message: "Could not fetch users contests" };
-    }
     const data: SubmissionResponseType = await res.json();
 
-    if (data.status !== "OK") return { success: false, message: data.comment };
+    if (data.status !== "OK")
+      return {
+        success: false,
+        message: data.comment || "Could not fetch users contests",
+      };
 
     return { success: true, data: data.result };
   } catch (error) {
