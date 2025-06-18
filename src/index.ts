@@ -8,6 +8,7 @@ import { studentRouter } from "./routes/student.route";
 
 import { config } from "dotenv";
 import mongoose from "mongoose";
+import { startCronJob } from "./cron/cron-init";
 config();
 
 const app = express();
@@ -50,6 +51,9 @@ const PORT = process.env.PORT || 3000;
 connectDB()
   .then(() => {
     console.log("Connected to DB");
+
+    // start cron job
+    startCronJob();
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}`);
     });
