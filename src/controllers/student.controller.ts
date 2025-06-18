@@ -12,7 +12,7 @@ import {
   getSubmissionHeatMap,
   getTotalSovledProblems,
 } from "../utils/helper";
-import path from "path";
+import path, { parse } from "path";
 import fs from "fs";
 
 export const fetchAllStudents = asyncHandler(async (req, res) => {
@@ -144,21 +144,47 @@ export const fetchStudentContestHistory = asyncHandler(async (req, res) => {
   if (!student) {
     throw new ApiError("Student not found", 404);
   }
+  console.log({ page: req.query.page, limit: req.query.limit });
+
+  const page = req.query.page;
+  const limit = req.query.limit;
 
   const days = parseInt((req.query.days || "90") as string);
 
   const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  console.log({ fromDate });
 
-  // fetch contest adter the from date and sort it in ascending order
-  const contests = await Contest.find({
-    student: id,
-    ratingUpdateTimeSeconds: { $gte: fromDate },
-  }).sort({ ratingUpdateTimeSeconds: 1 });
+  // based on whether page and limit provided we will decide send paginated data or not
+
+  let contests,
+    total = 0;
+  if (page && limit) {
+    [contests, total] = await Promise.all([
+      Contest.find({
+        student: id,
+        ratingUpdateTimeSeconds: { $gte: fromDate },
+      })
+        .sort({ ratingUpdateTimeSeconds: 1 })
+        .skip((parseInt(page as string) - 1) * parseInt(limit as string))
+        .limit(parseInt(limit as string)),
+
+      Contest.countDocuments({
+        student: id,
+        ratingUpdateTimeSeconds: { $gte: fromDate },
+      }),
+    ]);
+  } else {
+    contests = await Contest.find({
+      student: id,
+      ratingUpdateTimeSeconds: { $gte: fromDate },
+    }).sort({ ratingUpdateTimeSeconds: 1 });
+  }
+
+  console.log({ contests, total });
 
   res.status(200).json({
     success: true,
     data: contests.map((c) => ({
+      _id: c._id,
       contestName: c.contestName,
       date: c.ratingUpdateTimeSeconds,
       oldRating: c.oldRating,
@@ -166,6 +192,12 @@ export const fetchStudentContestHistory = asyncHandler(async (req, res) => {
       rank: c.rank,
       unsolvedProblems: c.unsolvedProblems,
     })),
+    pagination: {
+      total,
+      page: parseInt((page || "1") as string),
+      limit: parseInt((limit || "10") as string),
+      totalPages: Math.ceil(total / parseInt((limit || "10") as string)),
+    },
   });
 });
 
