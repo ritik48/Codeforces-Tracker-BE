@@ -160,7 +160,6 @@ export const fetchStudentContestHistory = asyncHandler(async (req, res) => {
   if (!student) {
     throw new ApiError("Student not found", 404);
   }
-  console.log({ page: req.query.page, limit: req.query.limit });
 
   const page = req.query.page;
   const limit = req.query.limit;
@@ -194,8 +193,6 @@ export const fetchStudentContestHistory = asyncHandler(async (req, res) => {
       ratingUpdateTimeSeconds: { $gte: fromDate },
     }).sort({ ratingUpdateTimeSeconds: 1 });
   }
-
-  console.log({ contests, total });
 
   res.status(200).json({
     success: true,
