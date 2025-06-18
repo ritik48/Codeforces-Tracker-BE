@@ -5,6 +5,7 @@ import {
   deleteStudent,
   downloadStudentData,
   fetchAllStudents,
+  fetchStudent,
   fetchStudentContestHistory,
   fetchStudentSubmissionData,
   updateStudent,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.get("/", isAuthenticated, fetchAllStudents);
 router.post("/", isAuthenticated, createStudent);
+router.get("/:id", isAuthenticated, fetchStudent);
 router.get("/:id/contest-history", isAuthenticated, fetchStudentContestHistory);
 router.get("/:id/submission-data", isAuthenticated, fetchStudentSubmissionData);
 router.patch("/:id", isAuthenticated, updateStudent);
