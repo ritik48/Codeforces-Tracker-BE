@@ -9,6 +9,7 @@ import {
   fetchStudentContestHistory,
   fetchStudentSubmissionData,
   updateStudent,
+  updateStudentEmail,
 } from "../controllers/student.controller";
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.post("/", isAuthenticated, createStudent);
 router.get("/:id", isAuthenticated, fetchStudent);
 router.get("/:id/contest-history", isAuthenticated, fetchStudentContestHistory);
 router.get("/:id/submission-data", isAuthenticated, fetchStudentSubmissionData);
+router.patch("/:id/email", isAuthenticated, updateStudentEmail);
 router.patch("/:id", isAuthenticated, updateStudent);
 router.delete("/:id", isAuthenticated, deleteStudent);
 router.get("/download", isAuthenticated, downloadStudentData);

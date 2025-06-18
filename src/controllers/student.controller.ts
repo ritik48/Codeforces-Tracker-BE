@@ -308,3 +308,34 @@ export const downloadStudentData = asyncHandler(async (req, res) => {
     }
   });
 });
+
+export const updateStudentEmail = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { email, allow_email } = req.body;
+
+  if (!id) {
+    throw new ApiError("Student ID is required", 400);
+  }
+
+  const student = await Student.findById(id);
+  if (!student) {
+    throw new ApiError("Student not found", 404);
+  }
+
+  if (!email) {
+    throw new ApiError("Email is required", 400);
+  }
+
+  const exitingEmail = await Student.findOne({ email });
+
+  if (exitingEmail && exitingEmail.cf_handle !== student.cf_handle) {
+    throw new ApiError("Email already exists", 400);
+  }
+
+  student.email = email;
+  student.allow_email = allow_email;
+
+  await student.save();
+
+  res.status(200).json({ success: true, data: student });
+});
