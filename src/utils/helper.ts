@@ -62,7 +62,7 @@ export const getAverageProblemPerDay = (
   const activeDays = new Set(
     submissions.map((sub) => sub.creationTime.toISOString().split("T")[0])
   );
-  const averageProblemPerDay = totalSolvedProblems / activeDays.size;
+  return Math.ceil(totalSolvedProblems / activeDays.size);
 };
 
 export const getMostDifficultProblem = (submissions: SubmissionDocument[]) => {
