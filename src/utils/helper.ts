@@ -46,7 +46,7 @@ export const getRatingBucketData = (submissions: SubmissionDocument[]) => {
   });
 
   const ratingBucketData = Object.entries(buckets).map(([label, count]) => ({
-    label,
+    rating: label,
     count,
   }));
 
