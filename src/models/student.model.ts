@@ -13,6 +13,7 @@ export interface Student extends Document {
   rank?: string;
   max_rank?: string;
   last_sync: Date;
+  profile_picture?: string;
 }
 
 const studentSchema = new Schema<Student>(
@@ -46,6 +47,9 @@ const studentSchema = new Schema<Student>(
     reminder_count: {
       type: Number,
       default: 0,
+    },
+    profile_picture: {
+      type: String,
     },
     rank: String,
     max_rank: String,
