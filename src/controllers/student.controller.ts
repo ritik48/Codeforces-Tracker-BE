@@ -14,7 +14,6 @@ import {
 } from "../utils/helper";
 import path from "path";
 import fs from "fs";
-import { Request, Response } from "express";
 
 export const fetchAllStudents = asyncHandler(async (req, res) => {
   const page = parseInt((req.query.page || "1") as string);
@@ -37,6 +36,19 @@ export const fetchAllStudents = asyncHandler(async (req, res) => {
       totalPages: Math.ceil(total / limit),
     },
   });
+});
+
+export const fetchStudent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    throw new ApiError("Student ID is required", 400);
+  }
+  console.log("Fetching student with ID:", id);
+  const student = await Student.findById(id);
+  if (!student) {
+    throw new ApiError("Student not found", 404);
+  }
+  res.status(200).json({ success: true, data: student });
 });
 
 export const createStudent = asyncHandler(async (req, res) => {
