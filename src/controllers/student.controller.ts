@@ -286,6 +286,8 @@ export const downloadStudentData = asyncHandler(async (req, res) => {
     "CF Handle",
     "Current Rating",
     "Max Rating",
+    "Reminder Count",
+    "Last Sync",
   ].join(",");
 
   const rows = students.map((student) => [
@@ -295,6 +297,8 @@ export const downloadStudentData = asyncHandler(async (req, res) => {
     student.cf_handle || "",
     student.current_rating || "",
     student.max_rating || "",
+    student.reminder_count || "",
+    student.last_sync || "",
   ]);
 
   const csvContent = [header, ...rows].join("\n");
