@@ -67,6 +67,8 @@ const addStudentToDB = async (student: Student) => {
     name: `${student_data.data?.firstName || ""} ${
       student_data.data?.lastName || ""
     }`.trim(),
+    rank: student_data.data?.rank || "",
+    max_rank: student_data.data?.maxRank || "",
   };
 
   await Student.findByIdAndUpdate(student._id, student_payload);
