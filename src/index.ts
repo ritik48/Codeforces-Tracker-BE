@@ -7,6 +7,7 @@ import cors from "cors";
 import { studentRouter } from "./routes/student.route";
 
 import { config } from "dotenv";
+import mongoose from "mongoose";
 config();
 
 const app = express();
@@ -28,9 +29,15 @@ app.get("/", (req, res) => {
 });
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  const { message = "Internal Server Error" } = err;
+  let status = 500,
+    message;
+  ({ message = "Internal Server Error" } = err);
 
-  let status = 500;
+  if (err instanceof mongoose.Error.CastError) {
+    status = 400;
+    message = "Invalid ObjectId";
+  }
+
   if (err instanceof ApiError) {
     ({ status } = err);
   }
