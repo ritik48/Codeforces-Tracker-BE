@@ -16,7 +16,7 @@ export const runTask = async () => {
   const students = await Student.find();
 
   // limit 5 concurrent requests
-  const limit = pLimit(2);
+  const limit = pLimit(1);
 
   const results = await Promise.allSettled(
     students.map((student) => limit(() => syncStudentData(student)))
@@ -48,9 +48,6 @@ export const runTask = async () => {
 };
 
 export const syncStudentData = async (student: Student) => {
-  // delay every student sync to avoid rate limiting
-  await new Promise((r) => setTimeout(r, 500));
-
   let { success, message } = await addStudentToDB(student);
   if (!success)
     return { success: false, message, cf_handle: student.cf_handle };
