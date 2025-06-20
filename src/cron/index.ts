@@ -16,7 +16,7 @@ export const runTask = async () => {
   const students = await Student.find();
 
   // limit 5 concurrent requests
-  const limit = pLimit(3);
+  const limit = pLimit(2);
 
   const results = await Promise.allSettled(
     students.map((student) => limit(() => syncStudentData(student)))
