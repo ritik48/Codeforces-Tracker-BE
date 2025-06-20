@@ -20,7 +20,8 @@ export const startCronJob = async () => {
     scheduledTask = cron.schedule(cronTime, async () => {
       console.log("Running cron task at", new Date().toLocaleString());
       await runTask();
-    });
+    }, {timezone: "UTC"});
+    
     console.log("Cron job scheduled at:", cronTime);
 
     return { success: true, message: "Cron job scheduled successfully" };
