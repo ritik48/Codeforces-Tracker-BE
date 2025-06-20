@@ -7,29 +7,61 @@ import { Contest } from "../models/contest.model";
 import { Submission } from "../models/submission.model";
 import { Student } from "../models/student.model";
 import { sendEmail } from "../utils/helper";
-import { profile } from "console";
+
+import pLimit from "p-limit";
 
 export const runTask = async () => {
+  console.log("Running sync task...");
+  const startTime = Date.now();
   const students = await Student.find();
 
-  for (let student of students) {
-    await syncStudentData(student);
-  }
+  // limit 5 concurrent requests
+  const limit = pLimit(3);
+
+  const results = await Promise.allSettled(
+    students.map((student) => limit(() => syncStudentData(student)))
+  );
+
+  let totalSuccess = 0;
+  let totalFailure = 0;
+
+  results.forEach((result) => {
+    if (result.status === "fulfilled") {
+      if (result.value.success) {
+        totalSuccess++;
+        console.log(`${result.value.cf_handle}: success`);
+      } else {
+        totalFailure++;
+        console.log(`${result.value.cf_handle}: failed`);
+      }
+    }
+  });
+
+  const durationMs = Date.now() - startTime;
+  const seconds = (durationMs / 1000).toFixed(2);
+
+  console.log(`Sync completed in: ${seconds}s`);
+  console.log(`Total success: ${totalSuccess}, total failure: ${totalFailure}`);
+
   // check for inactive students
   await checkInactiveStudents();
 };
 
 export const syncStudentData = async (student: Student) => {
-  // add student (it just updates the existing student)
+  // delay every student sync to avoid rate limiting
+  await new Promise((r) => setTimeout(r, 500));
+
   let { success, message } = await addStudentToDB(student);
-  if (!success) return { success: false, message };
+  if (!success)
+    return { success: false, message, cf_handle: student.cf_handle };
 
   // add contests
   ({ success, message } = await addContestToDB(
     student.cf_handle,
     student._id as string
   ));
-  if (!success) return { success: false, message };
+  if (!success)
+    return { success: false, message, cf_handle: student.cf_handle };
 
   // add submission
   ({ success, message } = await addSubmissionsToDB(
@@ -37,7 +69,8 @@ export const syncStudentData = async (student: Student) => {
     student._id as string
   ));
 
-  if (!success) return { success: false, message };
+  if (!success)
+    return { success: false, message, cf_handle: student.cf_handle };
 
   // update the total_unsolved problems in a contest
   const contests = await Contest.find({ student: student._id });
@@ -63,7 +96,11 @@ export const syncStudentData = async (student: Student) => {
   // update sync time for this student
   await Student.findByIdAndUpdate(student._id, { last_sync: new Date() });
 
-  return { success: true, message: "Synced successfully" };
+  return {
+    success: true,
+    message: "Synced successfully",
+    cf_handle: student.cf_handle,
+  };
 };
 
 const addStudentToDB = async (student: Student) => {
@@ -212,10 +249,8 @@ const checkInactiveStudents = async () => {
       $gte: new Date(Date.now() - inactiveDRange * 24 * 60 * 60 * 1000),
     },
   });
-  console.log({ submissions });
-  const studentIds = new Set(submissions.map((s) => s.student));
 
-  console.log({ studentIds });
+  const studentIds = new Set(submissions.map((s) => s.student));
 
   // Convert Set to Array for MongoDB query
   const studentIdsArray = Array.from(studentIds);
@@ -231,19 +266,36 @@ const checkInactiveStudents = async () => {
     console.log(`Inactive student: ${s.name}`);
   });
 
-  for (const student of inactiveStudents) {
-    console.log(`Sending email to inactive student: ${student.cf_handle}`);
+  // batch the email in group of 3 and send them in parallel
+  const limit = pLimit(3);
 
-    try {
-      await sendEmail(student.email, student.name || student.cf_handle);
+  const emailTasks = inactiveStudents.map((student) =>
+    limit(async () => {
+      console.log(`Sending email to inactive student: ${student.cf_handle}`);
 
-      // Increment reminder_count
-      student.reminder_count += 1;
-      await student.save();
+      try {
+        await sendEmail(student.email, student.name || student.cf_handle);
 
-      console.log(`✅ Email sent to ${student.email}`);
-    } catch (error) {
-      console.error(`❌ Failed to send email to ${student.email}:`, error);
-    }
-  }
+        // Increment reminder_count
+        student.reminder_count += 1;
+        await student.save();
+
+        console.log(`✅ Email sent to ${student.email}`);
+      } catch (error) {
+        console.error(`❌ Failed to send email to ${student.email}:`, error);
+      }
+    })
+  );
+
+  const emailResults = await Promise.allSettled(emailTasks);
+  console.log("Emails sent.");
+
+  const totalEmailSuccess = emailResults.filter(
+    (result) => result.status === "fulfilled"
+  ).length;
+  const totalEmailFailure = emailTasks.length - totalEmailSuccess;
+
+  console.log(
+    `Total Emails Success: ${totalEmailSuccess}, total emails failure: ${totalEmailFailure}`
+  );
 };
