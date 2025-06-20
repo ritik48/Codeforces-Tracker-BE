@@ -86,8 +86,6 @@ export const fetchStudentData = async (cf_handle: string) => {
     const res = await fetch(url);
     const data: StudentResponseType = await res.json();
 
-    console.log({ data });
-
     if (data.status !== "OK")
       return {
         success: false,
