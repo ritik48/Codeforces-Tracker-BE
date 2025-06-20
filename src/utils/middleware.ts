@@ -8,8 +8,6 @@ export const isAuthenticated = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const token = req.cookies.token;
 
-    console.log({ token });
-
     // check if token exists
     if (!token) {
       throw new ApiError("Unauthenticated Request", 401);
