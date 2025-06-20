@@ -44,7 +44,7 @@ export const fetchStudent = asyncHandler(async (req, res) => {
   if (!id) {
     throw new ApiError("Student ID is required", 400);
   }
-  console.log("Fetching student with ID:", id);
+
   const student = await Student.findById(id);
   if (!student) {
     throw new ApiError("Student not found", 404);
